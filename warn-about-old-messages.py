@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+# Fix import errors in OS X
 import sys
 sys.path.insert(1, '/Library/Python/2.7/site-packages')
 
@@ -10,10 +11,10 @@ import configparser
 import urllib
 from datetime import date, timedelta
 
-
 from apiclient import errors
 from apiclient.discovery import build
 from oauth2client.client import SignedJwtAssertionCredentials
+
 
 THIS_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -34,13 +35,13 @@ with open(THIS_PATH + "/" + SERVICE_ACCOUNT_KEY, 'rb') as f:
 
 
 def getDirectoryService(user_to_impersonate):
-    """Build and returns a Gmail service object authorized with the service accounts
+    """Build and returns a Directory service object authorized with the service accounts
     that act on behalf of the given user.
 
     Args:
       user_email: The email of the user.
     Returns:
-      Gmail service object.
+      Directory service object.
     """
     assert(user_to_impersonate.endswith(GA_DOMAIN))
     assert(user_to_impersonate not in GA_BLACKLISTED_USERS)
@@ -56,6 +57,7 @@ def getDirectoryService(user_to_impersonate):
     http = credentials.authorize(http)
 
     return build('admin', 'directory_v1', http=http)
+
 
 def getGmailService(user_to_impersonate):
     """Build and returns a Gmail service object authorized with the service accounts
@@ -84,6 +86,8 @@ def getGmailService(user_to_impersonate):
 
 
 def getAllUsers(directory_service):
+    # Get a list of all users on the domain
+
     # Via API manual at https://developers.google.com/admin-sdk/directory/v1/reference/#Users
     all_users = []
     page_token = None
@@ -141,10 +145,11 @@ directory_service = getDirectoryService(ADMIN_TO_IMPERSONATE)
 all_users = getAllUsers(directory_service)
 
 
-date_before = date.today() - timedelta(days=RETENTION_DAYS - 30)  # Subtract 30 for a warning period
+date_before = date.today() - timedelta(days=RETENTION_DAYS + 30)  # Add 30 for a warning period
 suggest_before = date.today() - timedelta(days=RETENTION_DAYS - 365)  # Subtract 365 for a suggestion email period
 date_string_before = date_before.strftime('%Y/%m/%d')
 suggest_string_before = suggest_before.strftime('%Y/%m/%d')
+
 
 for email, firstName in all_users.iteritems():
     gmail_service = getGmailService(email)
