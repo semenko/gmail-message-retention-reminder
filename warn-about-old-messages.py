@@ -15,8 +15,10 @@ from apiclient import errors
 from apiclient.discovery import build
 from oauth2client.client import SignedJwtAssertionCredentials
 
+THIS_PATH = os.path.dirname(os.path.realpath(__file__))
+
 _CONFIG = configparser.ConfigParser()
-_CONFIG.read("secrets.cfg")
+_CONFIG.read(THIS_PATH + "/secrets.cfg")
 
 GA_DOMAIN = _CONFIG.get('google', 'domain')
 SERVICE_ACCOUNT = _CONFIG.get('google', 'serviceAccount')
@@ -25,11 +27,10 @@ ADMIN_TO_IMPERSONATE = _CONFIG.get('google', 'adminToImpersonate')
 GA_BLACKLISTED_USERS = _CONFIG.get('google', 'blacklistedUsers')
 RETENTION_DAYS = int(_CONFIG.get('google', 'retentionPeriodInDays'))
 
-# Grab the service account .p12 private key
-with open(SERVICE_ACCOUNT_KEY, 'rb') as f:
-    SERVICE_SECRET_KEY = f.read()  # Google's fixed password for all keys is "notasecret"
 
-assert(os.path.isfile(SERVICE_ACCOUNT_KEY))
+# Grab the service account .p12 private key
+with open(THIS_PATH + "/" + SERVICE_ACCOUNT_KEY, 'rb') as f:
+    SERVICE_SECRET_KEY = f.read()  # Google's fixed password for all keys is "notasecret"
 
 
 def getDirectoryService(user_to_impersonate):
@@ -117,7 +118,7 @@ def sendWarningMessage(gmail_service, user_email, user_name, message_count, subj
            "Some of the ancient emails to be removed include:\n\n> %s\n\n" % (subjects),
            "You can see the full list of messages at: https://mail.google.com/a/%s/#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % before_date)),
            "Thanks,", "Domain Administrator\n\n",
-           "P.S. You'll receive a message like this every 30 days if you have extremely old emails -- they really slow down your mailbox!",
+           "P.S. You'll receive a message like this every Monday if you have extremely old emails -- they really slow down your mailbox!",
            "Want to clean up now? Try deleting some of these messages: https://mail.google.com/a/%s/#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % suggest_date))]
     body = '\n'.join(body)
 
@@ -171,7 +172,7 @@ for email, firstName in all_users.iteritems():
             safer_subject = first_subject.encode('ascii', 'ignore')
             if safer_subject is not "":
                 subject_list.append(safer_subject)
-                print('\t', safer_subject)
+                print('\t' + safer_subject)
 
-        # sendWarningMessage(gmail_service, email, firstName, size_estimate, '\n> '.join(subject_list), date_string_before, suggest_string_before)
+        sendWarningMessage(gmail_service, email, firstName, size_estimate, '\n> '.join(subject_list), date_string_before, suggest_string_before)
         print('')
