@@ -140,44 +140,51 @@ def sendWarningMessage(gmail_service, user_email, user_name, message_count, subj
         print('An error occurred: %s') % error
 
 
+def main():
+    """
+    Look up users, and email a warning if they have super old emails.
+    """
+    # There's a "warning" period of "hey, this will get deleted"
+    # And a "suggest" period of "why not clean out this other old stuff, too?"
+    date_before = date.today() - timedelta(days=(RETENTION_DAYS - 30))  # Subtract 30 for a warning period
+    suggest_before = date.today() - timedelta(days=(RETENTION_DAYS - 365))  # Subtract 365 for a suggestion email period
+    date_string_before = date_before.strftime('%Y/%m/%d')
+    suggest_string_before = suggest_before.strftime('%Y/%m/%d')
 
-directory_service = getDirectoryService(ADMIN_TO_IMPERSONATE)
-all_users = getAllUsers(directory_service)
+    directory_service = getDirectoryService(ADMIN_TO_IMPERSONATE)
+    all_users = getAllUsers(directory_service)
 
 
-date_before = date.today() - timedelta(days=RETENTION_DAYS + 30)  # Add 30 for a warning period
-suggest_before = date.today() - timedelta(days=RETENTION_DAYS - 365)  # Subtract 365 for a suggestion email period
-date_string_before = date_before.strftime('%Y/%m/%d')
-suggest_string_before = suggest_before.strftime('%Y/%m/%d')
+    for email, firstName in all_users.iteritems():
+        gmail_service = getGmailService(email)
+
+        params = {'userId': email, 'q': 'before:%s' % date_string_before}
+        one_page = gmail_service.users().threads().list(**params).execute()
+
+        size_estimate = one_page['resultSizeEstimate']
+
+        if size_estimate >0:
+            print('User: %s (%s)' % (email, size_estimate))
+
+            # Cap size to 15
+            one_page['threads'] = one_page['threads'][:15]
+
+            thread_params = {'userId': email, 'format': 'metadata',
+                             'fields': 'messages/payload/headers', 'metadataHeaders': 'subject'}
+
+            subject_list = []
+            for thread in one_page['threads']:
+                thread_params['id'] = thread['id']
+                one_thread = gmail_service.users().threads().get(**thread_params).execute()
+                first_subject = one_thread['messages'][0]['payload']['headers'][0]['value']
+                safer_subject = first_subject.encode('ascii', 'ignore')
+                if safer_subject is not "":
+                    subject_list.append(safer_subject)
+                    print('\t' + safer_subject)
+
+            sendWarningMessage(gmail_service, email, firstName, size_estimate, '\n> '.join(subject_list), date_string_before, suggest_string_before)
+            print('')
 
 
-for email, firstName in all_users.iteritems():
-    gmail_service = getGmailService(email)
-
-    params = {'userId': email, 'q': 'before:%s' % date_string_before}
-
-    one_page = gmail_service.users().threads().list(**params).execute()
-
-    size_estimate = one_page['resultSizeEstimate']
-
-    if size_estimate >0:
-        print('User: %s (%s)' % (email, size_estimate))
-
-        # Cap size to 15
-        one_page['threads'] = one_page['threads'][:15]
-
-        thread_params = {'userId': email, 'format': 'metadata',
-                         'fields': 'messages/payload/headers', 'metadataHeaders': 'subject'}
-
-        subject_list = []
-        for thread in one_page['threads']:
-            thread_params['id'] = thread['id']
-            one_thread = gmail_service.users().threads().get(**thread_params).execute()
-            first_subject = one_thread['messages'][0]['payload']['headers'][0]['value']
-            safer_subject = first_subject.encode('ascii', 'ignore')
-            if safer_subject is not "":
-                subject_list.append(safer_subject)
-                print('\t' + safer_subject)
-
-        sendWarningMessage(gmail_service, email, firstName, size_estimate, '\n> '.join(subject_list), date_string_before, suggest_string_before)
-        print('')
+if __name__ == "__main__":
+    main()
