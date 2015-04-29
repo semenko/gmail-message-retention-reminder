@@ -147,7 +147,7 @@ def main():
     # There's a "warning" period of "hey, this will get deleted"
     # And a "suggest" period of "why not clean out this other old stuff, too?"
     date_before = date.today() - timedelta(days=(RETENTION_DAYS - 30))  # Subtract 30 for a warning period
-    suggest_before = date.today() - timedelta(days=(RETENTION_DAYS - 365))  # Subtract 365 for a suggestion email period
+    suggest_before = date.today() - timedelta(days=(RETENTION_DAYS - (365*2)))  # Subtract 365*2 for a suggestion email period
     date_string_before = date_before.strftime('%Y/%m/%d')
     suggest_string_before = suggest_before.strftime('%Y/%m/%d')
 
