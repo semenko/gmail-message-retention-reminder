@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
 # Fix import errors in OS X
-import sys
-sys.path.insert(1, '/Library/Python/2.7/site-packages')
+#import sys
+#sys.path.insert(1, '/Library/Python/2.7/site-packages')
+
 
 import base64
+import logging
 import os
 import httplib2
 import configparser
@@ -104,7 +106,7 @@ def getAllUsers(directory_service):
             if not page_token:
                 break
         except errors.HttpError as error:
-            print('An error occurred: %s') % error
+            logging.error('An error occurred: %s') % error
             break
 
     email_and_name = {}
@@ -115,7 +117,7 @@ def getAllUsers(directory_service):
 
 
 def sendWarningMessage(gmail_service, user_email, user_name, message_count, subjects, before_date, suggest_date):
-    print('Sending message to %s' % user_email)
+    logging.debug('Sending message to %s' % user_email)
     subject = "[%s] Warning: Some very old emails will be trashed" % (user_name)
     body = ["Your email address (%s) is set to keep messages for %s days (%.4g years).\n" % (user_email, RETENTION_DAYS, RETENTION_DAYS/float(365)),
             "You have at least %s messages from before %s that will be trashed over the next month.\n" % (message_count, before_date),
@@ -134,13 +136,12 @@ def sendWarningMessage(gmail_service, user_email, user_name, message_count, subj
 
     try:
         sent_message = gmail_service.users().messages().send(**params).execute()
-        print('Message Id: %s' % sent_message['id'])
-        return sent_message
+        return('Sent message, ID: %s' % sent_message['id'])
     except errors.HttpError, error:
-        print('An error occurred: %s') % error
+        logging.error('An error occurred: %s') % error
 
 
-def main():
+def run(mail=False):
     """
     Look up users, and email a warning if they have super old emails.
     """
@@ -154,6 +155,7 @@ def main():
     directory_service = getDirectoryService(ADMIN_TO_IMPERSONATE)
     all_users = getAllUsers(directory_service)
 
+    logging.info('Send mail is set to: %s' % (mail))
 
     for email, firstName in all_users.iteritems():
         gmail_service = getGmailService(email)
@@ -163,8 +165,8 @@ def main():
 
         size_estimate = one_page['resultSizeEstimate']
 
-        if size_estimate >0:
-            print('User: %s (%s)' % (email, size_estimate))
+        if size_estimate > 0:
+            logging.info('User: %s (%s)' % (email, size_estimate))
 
             # Cap size to 15
             one_page['threads'] = one_page['threads'][:15]
@@ -181,10 +183,12 @@ def main():
                 if safer_subject is not "":
                     subject_list.append(safer_subject)
                     print('\t' + safer_subject)
+                    ''.append(safer_subject)
 
-            sendWarningMessage(gmail_service, email, firstName, size_estimate, '\n> '.join(subject_list), date_string_before, suggest_string_before)
-            print('')
+            if mail and False:
+                mail_id = sendWarningMessage(gmail_service, email, firstName, size_estimate, '\n> '.join(subject_list), date_string_before, suggest_string_before)
+            logging.debug('')
 
 
 if __name__ == "__main__":
-    main()
+    run(mail=False)
