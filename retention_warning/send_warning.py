@@ -130,7 +130,7 @@ def getAllUsers(directory_service):
             if not page_token:
                 break
         except errors.HttpError as error:
-            logging.error('An error occurred: %s') % error
+            logging.error('An error occurred: %s' % error)
             break
 
     email_and_name = {}
@@ -170,7 +170,7 @@ def sendWarningMessage(gmail_service, user_email, user_name, message_count, subj
         sent_message = gmail_service.users().messages().send(**params).execute()
         print_wrapper('Sent message, ID: %s' % sent_message['id'])
     except errors.HttpError, error:
-        logging.error('An error occurred: %s') % error
+        logging.error('An error occurred: %s' % error)
 
 
 def run(mail=False):
@@ -189,7 +189,7 @@ def run(mail=False):
 
     print_wrapper('Retention set to: %d days' % (RETENTION_DAYS))
     print_wrapper('Before string is: %s' % (date_string_before))
-    print_wrapper('Send mail is set to: %s' % (mail))
+    print_wrapper('Sending mail: %s' % (mail and CAN_SEND_MAIL))
 
     print_wrapper('Looping over users...')
     for email, firstName in all_users.iteritems():
