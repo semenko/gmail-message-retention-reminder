@@ -37,6 +37,7 @@ nosetests.xml
 
 # Secret config data
 secrets.cfg
-secret.p12
+*.p12
+*.pem
 
 .cache.pkl
