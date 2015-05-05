@@ -3,3 +3,8 @@ cron:
   url: /tasks/send-mail
   schedule: every monday 10:00
   timezone: America/Chicago
+
+- description: cleanup old logs monthly
+  url: /tasks/cleanup
+  schedule: every monday 9:00
+  timezone: America/Chicago
