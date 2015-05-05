@@ -20,7 +20,7 @@ from apiclient.discovery import build
 from oauth2client.client import SignedJwtAssertionCredentials
 
 # Print logging to console
-logging.getLogger().setLevel(logging.ERROR)
+# logging.getLogger().setLevel(logging.INFO)
 
 RUNNING_ON_GAE = 'appengine' in str(httplib.HTTP)
 
@@ -219,8 +219,7 @@ def run(mail=False):
                 safer_subject = first_subject.encode('ascii', 'ignore')
                 if safer_subject is not "":
                     subject_list.append(safer_subject)
-                    print('\t' + safer_subject)
-                    ''.append(safer_subject)
+                    print_wrapper('\t' + safer_subject)
 
             if mail and CAN_SEND_MAIL:
                  sendWarningMessage(gmail_service, email, firstName, size_estimate, '\n> '.join(subject_list), date_string_before, suggest_string_before)
