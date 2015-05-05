@@ -231,5 +231,5 @@ def run(mail=False):
 
 if __name__ == "__main__":
     print_wrapper('Running...')
-    run(mail=False)
+    run(mail=True)
     print_wrapper('Done.')

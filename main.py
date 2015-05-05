@@ -15,7 +15,7 @@ class JobHandler(webapp2.RequestHandler):
         self.response.write('<pre>Running CRON job (with email)<br>')
 
         warning_response = send_warning.run(mail=True)
-        self.response.write('<br>'.join(warning_response))
+        self.response.write('\n'.join(warning_response))
 
         self.response.write('Done.')
 
@@ -26,7 +26,7 @@ class SilentJobHandler(webapp2.RequestHandler):
         self.response.write('<pre>Running silent job<br>')
 
         warning_response = send_warning.run(mail=False)
-        self.response.write('<br>'.join(warning_response))
+        self.response.write('\n'.join(warning_response))
 
         self.response.write('Done.')
 
