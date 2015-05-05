@@ -17,6 +17,7 @@ from apiclient import errors
 from apiclient.discovery import build
 from oauth2client.client import SignedJwtAssertionCredentials
 
+import IPython
 
 THIS_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -28,12 +29,14 @@ SERVICE_ACCOUNT = _CONFIG.get('google', 'serviceAccount')
 SERVICE_ACCOUNT_KEY = _CONFIG.get('google', 'serviceAccountKey')
 ADMIN_TO_IMPERSONATE = _CONFIG.get('google', 'adminToImpersonate')
 GA_BLACKLISTED_USERS = _CONFIG.get('google', 'blacklistedUsers')
-RETENTION_DAYS = int(_CONFIG.get('google', 'retentionPeriodInDays'))
+GA_SKIP_USERS = _CONFIG.get('google', 'skipUsers')
+RETENTION_DAYS = _CONFIG.getint('google', 'retentionPeriodInDays')
+CAN_SEND_MAIL = _CONFIG.getboolean('google', 'canSendMail')
 
 
-# Grab the service account .p12 private key
+# Grab the service account .pem or .p12 private key
 with open(THIS_PATH + "/" + SERVICE_ACCOUNT_KEY, 'rb') as f:
-    SERVICE_SECRET_KEY = f.read()  # Google's fixed password for all keys is "notasecret"
+    SERVICE_SECRET_KEY = f.read()
 
 
 def getDirectoryService(user_to_impersonate):
@@ -111,7 +114,8 @@ def getAllUsers(directory_service):
 
     email_and_name = {}
     for user in all_users:
-          email_and_name[user['primaryEmail']] = user['name']['givenName']
+        if str(user['primaryEmail']) not in GA_SKIP_USERS:
+            email_and_name[user['primaryEmail']] = user['name']['givenName']
 
     return email_and_name
 
@@ -185,8 +189,8 @@ def run(mail=False):
                     print('\t' + safer_subject)
                     ''.append(safer_subject)
 
-            if mail and False:
-                mail_id = sendWarningMessage(gmail_service, email, firstName, size_estimate, '\n> '.join(subject_list), date_string_before, suggest_string_before)
+            if mail and CAN_SEND_MAIL:
+                mail_message = sendWarningMessage(gmail_service, email, firstName, size_estimate, '\n> '.join(subject_list), date_string_before, suggest_string_before)
             logging.debug('')
 
 
