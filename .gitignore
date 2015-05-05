@@ -37,7 +37,7 @@ nosetests.xml
 .pydevproject
 
 # Secret config data
-secrets.cfg
+*.cfg
 *.p12
 *.pem
 app.yaml
