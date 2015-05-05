@@ -143,7 +143,8 @@ def getAllUsers(directory_service):
     return email_and_name
 
 
-def sendWarningMessage(gmail_service, user_email, user_name, message_count, subjects, before_date, suggest_date):
+def sendWarningMessage(gmail_service, retention_period_in_days, user_email, user_name,
+                       message_count, subjects, before_date, suggest_date):
     """
     Send a warning email to a user who has mail that may be deleted.
     """
@@ -152,7 +153,7 @@ def sendWarningMessage(gmail_service, user_email, user_name, message_count, subj
     subject = "[%s] Warning: Some very old emails will be trashed" % (user_name)
 
     body = [
-        "Your email address (%s) is set to keep messages for %s days (%.4g years).\n" % (user_email, RETENTION_DAYS, RETENTION_DAYS / float(365)),
+        "Your email address (%s) is set to keep messages for %s days (%.4g years).\n" % (user_email, retention_period_in_days, retention_period_in_days / float(365)),
         "You have at least %s messages from before %s that will be trashed over the next month.\n" % (message_count, before_date),
         "Some of the ancient emails to be removed include:\n\n> %s\n\n" % (subjects),
         "You can see the full list of messages at: https://mail.google.com/a/%s/#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % before_date)),
@@ -174,23 +175,23 @@ def sendWarningMessage(gmail_service, user_email, user_name, message_count, subj
         logging.error('An error occurred: %s' % error)
 
 
-def run(mail=False):
+def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
     """
     Look up users, and email a warning if they have super old emails.
     """
     # There's a "warning" period of "hey, this will get deleted"
     # And a "suggest" period of "why not clean out this other old stuff, too?"
-    date_before = date.today() - timedelta(days=(RETENTION_DAYS - 30))  # Subtract 30 for a warning period
-    suggest_before = date.today() - timedelta(days=(RETENTION_DAYS - (365 * 2)))  # Subtract 365*2 for a suggestion email period
+    date_before = date.today() - timedelta(days=(retention_period_in_days - 30))  # Subtract 30 for a warning period
+    suggest_before = date.today() - timedelta(days=(retention_period_in_days - (365 * 2)))  # Subtract 365*2 for a suggestion email period
     date_string_before = date_before.strftime('%Y/%m/%d')
     suggest_string_before = suggest_before.strftime('%Y/%m/%d')
 
     directory_service = getDirectoryService(ADMIN_TO_IMPERSONATE)
     all_users = getAllUsers(directory_service)
 
-    print_wrapper('Retention set to: %d days' % (RETENTION_DAYS))
+    print_wrapper('Retention set to: %d days' % (retention_period_in_days))
     print_wrapper('Before string is: %s' % (date_string_before))
-    print_wrapper('Sending mail: %s' % (mail and CAN_SEND_MAIL))
+    print_wrapper('Sending mail: %s' % (send_mail and CAN_SEND_MAIL))
 
     print_wrapper('Looping over users...')
     for email, firstName in all_users.iteritems():
@@ -206,8 +207,8 @@ def run(mail=False):
         if size_estimate > 0:
             print_wrapper('User: %s (%s)' % (email, size_estimate))
 
-            # Cap size to 15
-            one_page['threads'] = one_page['threads'][:15]
+            # Cap size to 10
+            one_page['threads'] = one_page['threads'][:10]
 
             thread_params = {'userId': email, 'format': 'metadata',
                              'fields': 'messages/payload/headers', 'metadataHeaders': 'subject'}
@@ -222,8 +223,9 @@ def run(mail=False):
                     subject_list.append(safer_subject)
                     print_wrapper('\t' + safer_subject)
 
-            if mail and CAN_SEND_MAIL:
-                sendWarningMessage(gmail_service, email, firstName, size_estimate, '\n> '.join(subject_list), date_string_before, suggest_string_before)
+            if send_mail and CAN_SEND_MAIL:
+                sendWarningMessage(gmail_service, retention_period_in_days, email, firstName, size_estimate,
+                                   '\n> '.join(subject_list), date_string_before, suggest_string_before)
             print_wrapper('')
 
     return GAE_OUTPUT_BUFFER
@@ -231,5 +233,5 @@ def run(mail=False):
 
 if __name__ == "__main__":
     print_wrapper('Running...')
-    run(mail=True)
+    run(send_mail=True)
     print_wrapper('Done.')
