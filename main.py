@@ -44,30 +44,35 @@ class MainHandler(webapp2.RequestHandler):
             self.response.write('\n\n--------------------------------\n\n')
 
 
+def run_warning_and_save_output(should_send_mail):
+    """
+    Run the warning script and save the output.
+    :param mail: Send mail? Boolean.
+    :return: String of results object.
+    """
+    warning_response = send_warning.run(mail=should_send_mail)
+    warning_string = '\n'.join(warning_response)
+
+    # Save the result
+    storage = LastRunResult(parent=RECORD_KEY,
+                            content=warning_string)
+    storage.put()
+
+    return warning_string
+
+
 class JobHandler(webapp2.RequestHandler):
     def get(self):
         self.response.write('<pre>Running CRON job (with email)\n\n')
-
-        warning_response = send_warning.run(mail=True)
-        warning_string = '\n'.join(warning_response)
+        warning_string = run_warning_and_save_output(should_send_mail=True)
         self.response.write(warning_string)
-
-        storage = LastRunResult(parent=RECORD_KEY,
-                                content=warning_string)
-        storage.put()
 
 
 class SilentJobHandler(webapp2.RequestHandler):
     def get(self):
         self.response.write('<pre>Running silent job\n\n')
-
-        warning_response = send_warning.run(mail=False)
-        warning_string = '\n'.join(warning_response)
+        warning_string = run_warning_and_save_output(should_send_mail=False)
         self.response.write(warning_string)
-
-        storage = LastRunResult(parent=RECORD_KEY,
-                                content=warning_string)
-        storage.put()
 
 
 app = webapp2.WSGIApplication(
