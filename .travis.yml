@@ -3,8 +3,6 @@ python:
   - "2.7"
 #  - "3.3"
 #  - "3.4"
-notifications:
-  email: true
 before_install:
 #  - "sudo apt-get update"
 #  - "sudo apt-get install some-silly-package"
