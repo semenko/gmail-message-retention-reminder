@@ -1,11 +1,5 @@
 #!/usr/bin/env python
 
-# Fix 'six' import errors in OS X
-import platform
-if platform.system() == "Darwin":
-    import sys
-    sys.path.insert(1, '/Library/Python/2.7/site-packages')
-
 import base64
 import logging
 import os
@@ -17,6 +11,12 @@ from datetime import date, timedelta
 from apiclient import errors
 from apiclient.discovery import build
 from oauth2client.client import SignedJwtAssertionCredentials
+
+# Fix 'six' import errors in OS X
+import platform
+if platform.system() == "Darwin":
+    import sys
+    sys.path.insert(1, '/Library/Python/2.7/site-packages')
 
 # Print logging to console
 # logging.getLogger().setLevel(logging.INFO)
@@ -151,13 +151,13 @@ def sendWarningMessage(gmail_service, user_email, user_name, message_count, subj
     logging.debug('Sending message to %s' % user_email)
     subject = "[%s] Warning: Some very old emails will be trashed" % (user_name)
 
-    body = ["Your email address (%s) is set to keep messages for %s days (%.4g years).\n" % (user_email, RETENTION_DAYS, RETENTION_DAYS/float(365)),
+    body = ["Your email address (%s) is set to keep messages for %s days (%.4g years).\n" % (user_email, RETENTION_DAYS, RETENTION_DAYS / float(365)),
             "You have at least %s messages from before %s that will be trashed over the next month.\n" % (message_count, before_date),
-           "Some of the ancient emails to be removed include:\n\n> %s\n\n" % (subjects),
-           "You can see the full list of messages at: https://mail.google.com/a/%s/#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % before_date)),
-           "Thanks,", "Domain Administrator\n\n",
-           "P.S. You'll receive a message like this every Monday if you have extremely old emails -- they really slow down your mailbox!",
-           "Want to clean up now? Try deleting some of these messages: https://mail.google.com/a/%s/#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % suggest_date))]
+            "Some of the ancient emails to be removed include:\n\n> %s\n\n" % (subjects),
+            "You can see the full list of messages at: https://mail.google.com/a/%s/#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % before_date)),
+            "Thanks,", "Domain Administrator\n\n",
+            "P.S. You'll receive a message like this every Monday if you have extremely old emails -- they really slow down your mailbox!",
+            "Want to clean up now? Try deleting some of these messages: https://mail.google.com/a/%s/#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % suggest_date))]
 
     body = '\n'.join(body)
 
@@ -179,7 +179,7 @@ def run(mail=False):
     # There's a "warning" period of "hey, this will get deleted"
     # And a "suggest" period of "why not clean out this other old stuff, too?"
     date_before = date.today() - timedelta(days=(RETENTION_DAYS - 30))  # Subtract 30 for a warning period
-    suggest_before = date.today() - timedelta(days=(RETENTION_DAYS - (365*2)))  # Subtract 365*2 for a suggestion email period
+    suggest_before = date.today() - timedelta(days=(RETENTION_DAYS - (365 * 2)))  # Subtract 365*2 for a suggestion email period
     date_string_before = date_before.strftime('%Y/%m/%d')
     suggest_string_before = suggest_before.strftime('%Y/%m/%d')
 
@@ -221,7 +221,7 @@ def run(mail=False):
                     print_wrapper('\t' + safer_subject)
 
             if mail and CAN_SEND_MAIL:
-                 sendWarningMessage(gmail_service, email, firstName, size_estimate, '\n> '.join(subject_list), date_string_before, suggest_string_before)
+                sendWarningMessage(gmail_service, email, firstName, size_estimate, '\n> '.join(subject_list), date_string_before, suggest_string_before)
             print_wrapper('')
 
     return GAE_OUTPUT_BUFFER
