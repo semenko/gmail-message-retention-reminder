@@ -47,7 +47,6 @@ class MainHandler(webapp2.RequestHandler):
 
 class JobHandler(webapp2.RequestHandler):
     def get(self):
-        logging.info('Running CRON job.')
         self.response.write('<pre>Running CRON job (with email)\n\n')
 
         warning_response = send_warning.run(mail=True)
@@ -58,12 +57,9 @@ class JobHandler(webapp2.RequestHandler):
                                 content=warning_string)
         storage.put()
 
-        self.response.write('\n\n*******************\nDone.')
-
 
 class SilentJobHandler(webapp2.RequestHandler):
     def get(self):
-        logging.info('Running silent job with no mail.')
         self.response.write('<pre>Running silent job\n\n')
 
         warning_response = send_warning.run(mail=False)
@@ -74,12 +70,11 @@ class SilentJobHandler(webapp2.RequestHandler):
                                 content=warning_string)
         storage.put()
 
-        self.response.write('\n\n*******************\nDone.')
 
-
-app = webapp2.WSGIApplication([
+app = webapp2.WSGIApplication(
+    [
         ('/', MainHandler),
         ('/tasks/send-mail', JobHandler),
         ('/tasks/run-silently', SilentJobHandler),
         ('/tasks/cleanup', CleanupHandler)
-], debug=True)
+    ], debug=True)
