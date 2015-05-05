@@ -1,10 +1,12 @@
 gmail-message-retention-reminder
 ========================
-Automatically email domain users when they have messages that will be deleted by a retention policy.
+[![Build Status](https://travis-ci.org/semenko/gmail-message-retention-reminder.svg?branch=master)](https://travis-ci.org/semenko/gmail-message-retention-reminder) [![Code Climate](https://codeclimate.com/github/semenko/gmail-message-retention-reminder/badges/gpa.svg)](https://codeclimate.com/github/semenko/gmail-message-retention-reminder)
 
 Setting a Google Apps retention policy can be scary, since the policy is applied without warning to your users.
+
 Silently deleting old mail seems pretty uncool -- this app will email all users in your domain about messages that 
-will be deleted due to a retention policy.
+will be deleted due to a mail retention policy.
+
 
 Features:
 
