@@ -1,0 +1,16 @@
+language: python
+python:
+  - "2.7"
+#  - "3.3"
+#  - "3.4"
+notifications:
+  email: true
+before_install:
+#  - "sudo apt-get update"
+#  - "sudo apt-get install some-silly-package"
+install:
+  - "pip install -r requirements.txt"
+  - "pip install pep8 pylint"
+script:
+  - "pylint --rcfile=.pylintrc --disable=import-error *.py retention_warning/*.py"
+  - "pep8 --ignore=E501,E302,E303 *.py retention_warning/*.py"
