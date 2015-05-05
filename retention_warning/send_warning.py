@@ -159,6 +159,7 @@ def run(mail=False):
     directory_service = getDirectoryService(ADMIN_TO_IMPERSONATE)
     all_users = getAllUsers(directory_service)
 
+    logging.info('Before string is: %s' % (date_string_before))
     logging.info('Send mail is set to: %s' % (mail))
 
     for email, firstName in all_users.iteritems():
@@ -168,6 +169,8 @@ def run(mail=False):
         one_page = gmail_service.users().threads().list(**params).execute()
 
         size_estimate = one_page['resultSizeEstimate']
+        if 'threads' in one_page:
+            size_estimate = max(size_estimate, len(one_page['threads']))
 
         if size_estimate > 0:
             logging.info('User: %s (%s)' % (email, size_estimate))
@@ -195,4 +198,6 @@ def run(mail=False):
 
 
 if __name__ == "__main__":
+    logging.info('Running...')
     run(mail=False)
+    logging.info('Done.')
