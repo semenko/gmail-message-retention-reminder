@@ -1,0 +1,5 @@
+cron:
+- description: weekly retention job
+  url: /tasks/send-mail
+  schedule: every monday 10:00
+  timezone: America/Chicago
