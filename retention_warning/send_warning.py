@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 
-# Fix import errors in OS X
-#import sys
-#sys.path.insert(1, '/Library/Python/2.7/site-packages')
-
+# Fix 'six' import errors in OS X
+import platform
+if platform.system() == "Darwin":
+    import sys
+    sys.path.insert(1, '/Library/Python/2.7/site-packages')
 
 import base64
 import logging
 import os
+import httplib
 import httplib2
 import configparser
 import urllib
@@ -17,8 +19,21 @@ from apiclient import errors
 from apiclient.discovery import build
 from oauth2client.client import SignedJwtAssertionCredentials
 
-import IPython
+# Print logging to console
+logging.getLogger().setLevel(logging.ERROR)
 
+RUNNING_ON_GAE = 'appengine' in str(httplib.HTTP)
+
+# Bare-bones (one value) handling of pretty output for CRON vs GAE
+GAE_OUTPUT_BUFFER = []
+def print_wrapper(val):
+    if RUNNING_ON_GAE:
+        GAE_OUTPUT_BUFFER.append(val)
+    else:
+        print(val)
+
+
+# Load our configuration
 THIS_PATH = os.path.dirname(os.path.realpath(__file__))
 
 _CONFIG = configparser.ConfigParser()
@@ -91,9 +106,15 @@ def getGmailService(user_to_impersonate):
 
 
 def getAllUsers(directory_service):
-    # Get a list of all users on the domain
+    """
+    Get a list of all users on the domain
 
-    # Via API manual at https://developers.google.com/admin-sdk/directory/v1/reference/#Users
+    Via API manual at https://developers.google.com/admin-sdk/directory/v1/reference/#Users
+
+    :param directory_service: A directory service object
+    :return: A dictionary of {primaryEmail: givenName}
+    """
+    print_wrapper('Listing all users at %s' % (GA_DOMAIN))
     all_users = []
     page_token = None
     params = {'domain': GA_DOMAIN, 'viewType': 'domain_public'}
@@ -116,13 +137,21 @@ def getAllUsers(directory_service):
     for user in all_users:
         if str(user['primaryEmail']) not in GA_SKIP_USERS:
             email_and_name[user['primaryEmail']] = user['name']['givenName']
+        else:
+            print_wrapper('Skipped user: %s' % (user['primaryEmail']))
 
+    print_wrapper('Found %d users in domain.' % (len(email_and_name)))
     return email_and_name
 
 
 def sendWarningMessage(gmail_service, user_email, user_name, message_count, subjects, before_date, suggest_date):
+    """
+    Send a warning email to a user who has mail that may be deleted.
+    """
+    # TODO: Clean up this mess.
     logging.debug('Sending message to %s' % user_email)
     subject = "[%s] Warning: Some very old emails will be trashed" % (user_name)
+
     body = ["Your email address (%s) is set to keep messages for %s days (%.4g years).\n" % (user_email, RETENTION_DAYS, RETENTION_DAYS/float(365)),
             "You have at least %s messages from before %s that will be trashed over the next month.\n" % (message_count, before_date),
            "Some of the ancient emails to be removed include:\n\n> %s\n\n" % (subjects),
@@ -130,17 +159,16 @@ def sendWarningMessage(gmail_service, user_email, user_name, message_count, subj
            "Thanks,", "Domain Administrator\n\n",
            "P.S. You'll receive a message like this every Monday if you have extremely old emails -- they really slow down your mailbox!",
            "Want to clean up now? Try deleting some of these messages: https://mail.google.com/a/%s/#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % suggest_date))]
+
     body = '\n'.join(body)
 
     message = 'From: %s\nTo: %s\nSubject: %s\n\n%s' % (user_email, user_email, subject, body)
-
     encoded_message = base64.urlsafe_b64encode(message)
-
     params = {'userId': user_email, 'body': {'raw': encoded_message}}
 
     try:
         sent_message = gmail_service.users().messages().send(**params).execute()
-        return('Sent message, ID: %s' % sent_message['id'])
+        print_wrapper('Sent message, ID: %s' % sent_message['id'])
     except errors.HttpError, error:
         logging.error('An error occurred: %s') % error
 
@@ -159,9 +187,11 @@ def run(mail=False):
     directory_service = getDirectoryService(ADMIN_TO_IMPERSONATE)
     all_users = getAllUsers(directory_service)
 
-    logging.info('Before string is: %s' % (date_string_before))
-    logging.info('Send mail is set to: %s' % (mail))
+    print_wrapper('Retention set to: %d days' % (RETENTION_DAYS))
+    print_wrapper('Before string is: %s' % (date_string_before))
+    print_wrapper('Send mail is set to: %s' % (mail))
 
+    print_wrapper('Looping over users...')
     for email, firstName in all_users.iteritems():
         gmail_service = getGmailService(email)
 
@@ -173,7 +203,7 @@ def run(mail=False):
             size_estimate = max(size_estimate, len(one_page['threads']))
 
         if size_estimate > 0:
-            logging.info('User: %s (%s)' % (email, size_estimate))
+            print_wrapper('User: %s (%s)' % (email, size_estimate))
 
             # Cap size to 15
             one_page['threads'] = one_page['threads'][:15]
@@ -193,11 +223,13 @@ def run(mail=False):
                     ''.append(safer_subject)
 
             if mail and CAN_SEND_MAIL:
-                mail_message = sendWarningMessage(gmail_service, email, firstName, size_estimate, '\n> '.join(subject_list), date_string_before, suggest_string_before)
-            logging.debug('')
+                 sendWarningMessage(gmail_service, email, firstName, size_estimate, '\n> '.join(subject_list), date_string_before, suggest_string_before)
+            print_wrapper('')
+
+    return GAE_OUTPUT_BUFFER
 
 
 if __name__ == "__main__":
-    logging.info('Running...')
+    print_wrapper('Running...')
     run(mail=False)
-    logging.info('Done.')
+    print_wrapper('Done.')
