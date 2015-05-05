@@ -35,7 +35,8 @@ complex setups, or silently fail, etc.
 9. Copy secrets.cfg.example to secrets.cfg and fill in the values.
 10. Visit https://admin.google.com/ and go to Security > Show More > Advanced Settings > Manage API Client Access
 11. Enter the client name `the-service-account-client-id-from-your-dev-console.apps.googleusercontent.com` and the scopes `https://www.googleapis.com/auth/admin.directory.user.readonly,https://www.googleapis.com/auth/gmail.readonly,https://www.googleapis.com/auth/gmail.compose` and click Authorize.
-
+12. Go to the "App Engine Apps" panel and click the "+" for "Add Services"
+13. Under "Google App Engine" enter "my-organization-retention-warning" (your app ID) and click "Add It Now"
 
 ## Run as a Cron Job
 

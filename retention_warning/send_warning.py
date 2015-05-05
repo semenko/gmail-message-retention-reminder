@@ -9,7 +9,6 @@ if platform.system() == "Darwin":
 import base64
 import logging
 import os
-import httplib
 import httplib2
 import configparser
 import urllib
@@ -22,7 +21,7 @@ from oauth2client.client import SignedJwtAssertionCredentials
 # Print logging to console
 # logging.getLogger().setLevel(logging.INFO)
 
-RUNNING_ON_GAE = 'appengine' in str(httplib.HTTP)
+RUNNING_ON_GAE = 'SERVER_SOFTWARE' in os.environ
 
 # Bare-bones (one value) handling of pretty output for CRON vs GAE
 GAE_OUTPUT_BUFFER = []
