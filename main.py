@@ -51,7 +51,10 @@ def run_warning_and_save_output(should_send_mail, retention_time):
     :param mail: Send mail? Boolean.
     :return: String of results object.
     """
-    warning_response = send_warning.run(send_mail=should_send_mail, retention_period_in_days=retention_time)
+    if retention_time is not None:
+        warning_response = send_warning.run(send_mail=should_send_mail, retention_period_in_days=int(retention_time))
+    else:
+        warning_response = send_warning.run(send_mail=should_send_mail)
     warning_string = '\n'.join(warning_response)
 
     # Save the result

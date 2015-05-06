@@ -179,6 +179,7 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
     """
     Look up users, and email a warning if they have super old emails.
     """
+    GAE_OUTPUT_BUFFER = []
     # There's a "warning" period of "hey, this will get deleted"
     # And a "suggest" period of "why not clean out this other old stuff, too?"
     date_before = date.today() - timedelta(days=(retention_period_in_days - 30))  # Subtract 30 for a warning period
@@ -193,7 +194,7 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
     print_wrapper('Before string is: %s' % (date_string_before))
     print_wrapper('Sending mail: %s' % (send_mail and CAN_SEND_MAIL))
 
-    print_wrapper('Looping over users...')
+    print_wrapper('Looping over users...\n')
     for email, firstName in all_users.iteritems():
         gmail_service = getGmailService(email)
 
