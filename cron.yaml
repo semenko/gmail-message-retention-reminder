@@ -1,10 +1,10 @@
 cron:
-- description: weekly retention job
+- description: monthly retention job
   url: /tasks/send-mail
-  schedule: every monday 10:00
+  schedule: 1st monday 10:00
   timezone: America/Chicago
 
-- description: cleanup old logs monthly
+- description: cleanup old logs weekly
   url: /tasks/cleanup
-  schedule: every monday 9:00
+  schedule: every saturday 9:00
   timezone: America/Chicago

@@ -35,7 +35,7 @@ class CleanupHandler(webapp2.RequestHandler):
 
 class MainHandler(webapp2.RequestHandler):
     def get(self):
-        self.response.write('<a href="/tasks/run-silently">/tasks/run-silently</a> or /tasks/send-mail<br><br>')
+        self.response.write('<a href="/tasks/run-silently">/tasks/run-silently</a> or /tasks/send-mail<br><hr>')
         self.response.write('<pre>Last runs:\n\n')
         last_run_data = LastRunResult.last_runs(RECORD_KEY).fetch(10)
 
@@ -45,13 +45,13 @@ class MainHandler(webapp2.RequestHandler):
             self.response.write('\n\n--------------------------------\n\n')
 
 
-def run_warning_and_save_output(should_send_mail):
+def run_warning_and_save_output(should_send_mail, retention_time):
     """
     Run the warning script and save the output.
     :param mail: Send mail? Boolean.
     :return: String of results object.
     """
-    warning_response = send_warning.run(send_mail=should_send_mail)
+    warning_response = send_warning.run(send_mail=should_send_mail, retention_period_in_days=retention_time)
     warning_string = '\n'.join(warning_response)
 
     # Save the result
@@ -70,9 +70,9 @@ class JobHandler(webapp2.RequestHandler):
 
 
 class SilentJobHandler(webapp2.RequestHandler):
-    def get(self):
+    def get(self, retention_time=None):
         self.response.write('<pre>Running silent job\n\n')
-        warning_string = run_warning_and_save_output(should_send_mail=False)
+        warning_string = run_warning_and_save_output(should_send_mail=False, retention_time=retention_time)
         self.response.write(warning_string)
 
 
@@ -80,6 +80,8 @@ app = webapp2.WSGIApplication(
     [
         ('/', MainHandler),
         ('/tasks/send-mail', JobHandler),
+        ('/tasks/send-mail/(\d+)', JobHandler),
         ('/tasks/run-silently', SilentJobHandler),
+        ('/tasks/run-silently/(\d+)', SilentJobHandler),
         ('/tasks/cleanup', CleanupHandler)
     ], debug=True)
