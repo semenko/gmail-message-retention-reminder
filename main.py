@@ -45,7 +45,7 @@ class MainHandler(webapp2.RequestHandler):
             self.response.write('\n\n--------------------------------\n\n')
 
 
-def run_warning_and_save_output(should_send_mail, retention_time):
+def run_warning_and_save_output(should_send_mail, retention_time=None):
     """
     Run the warning script and save the output.
     :param mail: Send mail? Boolean.

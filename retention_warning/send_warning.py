@@ -179,6 +179,7 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
     """
     Look up users, and email a warning if they have super old emails.
     """
+    global GAE_OUTPUT_BUFFER
     GAE_OUTPUT_BUFFER = []
     # There's a "warning" period of "hey, this will get deleted"
     # And a "suggest" period of "why not clean out this other old stuff, too?"
@@ -229,6 +230,7 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
                                    '\n> '.join(subject_list), date_string_before, suggest_string_before)
             print_wrapper('')
 
+    print_wrapper('\nDone.')
     return GAE_OUTPUT_BUFFER
 
 
