@@ -24,6 +24,9 @@ if platform.system() == "Darwin":
 RUNNING_ON_GAE = 'SERVER_SOFTWARE' in os.environ
 
 # Bare-bones (one value) handling of pretty output for CRON vs GAE
+
+# TODO: Drop this sketchy global.
+# pylint:disable=W0603
 GAE_OUTPUT_BUFFER = []
 def print_wrapper(val):
     if RUNNING_ON_GAE:
@@ -201,6 +204,7 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
 
         params = {'userId': email, 'q': 'before:%s' % date_string_before}
         one_page = gmail_service.users().threads().list(**params).execute()
+        # TODO: Catch DeadlineExceededError here and elsewhere
 
         size_estimate = one_page['resultSizeEstimate']
         if 'threads' in one_page:
@@ -230,7 +234,7 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
                                    '\n> '.join(subject_list), date_string_before, suggest_string_before)
             print_wrapper('')
 
-    print_wrapper('\nDone.')
+    print_wrapper('Done.')
     return GAE_OUTPUT_BUFFER
 
 
