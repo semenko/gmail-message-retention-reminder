@@ -5,8 +5,10 @@ import logging
 import os
 import httplib2
 import configparser
+import time
 import urllib
 from datetime import date, timedelta
+from functools import wraps
 
 from apiclient import errors
 from apiclient.discovery import build
@@ -61,6 +63,25 @@ class gae_print_handler():
         self.buffer = []
 
 OUTPUT_BUFFER = gae_print_handler()
+
+
+# Retry decorator
+# Adapted from http://googleadsdeveloper.blogspot.com/2014/09/decorating-your-python-dfp-api.html
+def retry(func):
+    @wraps(func)
+    def function_to_retry(*args, **kwargs):
+        tries=4
+        delay=1
+        while tries > 1:
+            try:
+                return func(*args, **kwargs)
+            except Exception, e:
+                print('%s, Retrying in %d seconds...' % (str(e), delay))
+                time.sleep(delay)
+                tries -= 1
+                delay *= 2
+        return func(*args, **kwargs)
+    return function_to_retry
 
 
 def getDirectoryService(user_to_impersonate):
@@ -132,7 +153,7 @@ def getAllUsers(directory_service):
         try:
             if page_token:
                 params['pageToken'] = page_token
-            current_page = directory_service.users().list(**params).execute()
+            current_page = retry(directory_service.users().list(**params).execute)()
 
             all_users.extend(current_page['users'])
             page_token = current_page.get('nextPageToken')
@@ -179,7 +200,7 @@ def sendWarningMessage(gmail_service, retention_period_in_days, user_email, user
     params = {'userId': user_email, 'body': {'raw': encoded_message}}
 
     try:
-        sent_message = gmail_service.users().messages().send(**params).execute()
+        sent_message = retry(gmail_service.users().messages().send(**params).execute)()
         OUTPUT_BUFFER.write('Sent message, ID: %s' % sent_message['id'])
     except errors.HttpError, error:
         logging.error('An error occurred: %s' % error)
@@ -210,13 +231,7 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
 
         params = {'userId': email, 'q': 'before:%s' % date_string_before}
 
-        retry_count = 0
-        while retry_count < 2:
-            try:
-                one_page = gmail_service.users().threads().list(**params).execute()
-                break
-            except DeadlineExceededError:
-                retry_count += 1
+        one_page = retry(gmail_service.users().threads().list(**params).execute)()
 
         size_estimate = one_page['resultSizeEstimate']
         if 'threads' in one_page:
@@ -234,7 +249,7 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
             subject_list = []
             for thread in one_page['threads']:
                 thread_params['id'] = thread['id']
-                one_thread = gmail_service.users().threads().get(**thread_params).execute()
+                one_thread = retry(gmail_service.users().threads().get(**thread_params).execute)()
                 first_subject = one_thread['messages'][0]['payload']['headers'][0]['value']
                 safer_subject = first_subject.encode('ascii', 'ignore')
                 if safer_subject is not "":
