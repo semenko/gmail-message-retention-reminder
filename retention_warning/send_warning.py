@@ -12,7 +12,6 @@ from functools import wraps
 
 from apiclient import errors
 from apiclient.discovery import build
-from google.appengine.runtime import DeadlineExceededError
 from oauth2client.client import SignedJwtAssertionCredentials
 
 # Fix 'six' import errors in OS X
