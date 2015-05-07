@@ -70,8 +70,8 @@ OUTPUT_BUFFER = gae_print_handler()
 def retry(func):
     @wraps(func)
     def function_to_retry(*args, **kwargs):
-        tries=4
-        delay=1
+        tries = 4
+        delay = 1
         while tries > 1:
             try:
                 return func(*args, **kwargs)
