@@ -10,6 +10,7 @@ from datetime import date, timedelta
 
 from apiclient import errors
 from apiclient.discovery import build
+from google.appengine.runtime import DeadlineExceededError
 from oauth2client.client import SignedJwtAssertionCredentials
 
 # Fix 'six' import errors in OS X
@@ -22,17 +23,6 @@ if platform.system() == "Darwin":
 # logging.getLogger().setLevel(logging.INFO)
 
 RUNNING_ON_GAE = 'SERVER_SOFTWARE' in os.environ
-
-# Bare-bones (one value) handling of pretty output for CRON vs GAE
-
-# TODO: Drop this sketchy global.
-# pylint:disable=W0603
-GAE_OUTPUT_BUFFER = []
-def print_wrapper(val):
-    if RUNNING_ON_GAE:
-        GAE_OUTPUT_BUFFER.append(val)
-    else:
-        print(val)
 
 
 # Load our configuration
@@ -54,6 +44,23 @@ CAN_SEND_MAIL = _CONFIG.getboolean('google', 'canSendMail')
 # Grab the service account .pem or .p12 private key
 with open(THIS_PATH + "/" + SERVICE_ACCOUNT_KEY, 'rb') as f:
     SERVICE_SECRET_KEY = f.read()
+
+
+# Bare-bones (one value) handling of pretty output for CRON vs GAE
+class gae_print_handler():
+    def __init__(self):
+        self.buffer = []
+
+    def write(self, message):
+        if RUNNING_ON_GAE:
+            self.buffer.append(message)
+        else:
+            print(message)
+
+    def clear(self):
+        self.buffer = []
+
+OUTPUT_BUFFER = gae_print_handler()
 
 
 def getDirectoryService(user_to_impersonate):
@@ -116,7 +123,7 @@ def getAllUsers(directory_service):
     :param directory_service: A directory service object
     :return: A dictionary of {primaryEmail: givenName}
     """
-    print_wrapper('Listing all users at %s' % (GA_DOMAIN))
+    OUTPUT_BUFFER.write('Listing all users at %s' % (GA_DOMAIN))
     all_users = []
     page_token = None
     params = {'domain': GA_DOMAIN, 'viewType': 'domain_public'}
@@ -140,9 +147,9 @@ def getAllUsers(directory_service):
         if str(user['primaryEmail']) not in GA_SKIP_USERS:
             email_and_name[user['primaryEmail']] = user['name']['givenName']
         else:
-            print_wrapper('Skipped user: %s' % (user['primaryEmail']))
+            OUTPUT_BUFFER.write('Skipped user: %s' % (user['primaryEmail']))
 
-    print_wrapper('Found %d users in domain.' % (len(email_and_name)))
+    OUTPUT_BUFFER.write('Found %d users in domain.' % (len(email_and_name)))
     return email_and_name
 
 
@@ -173,7 +180,7 @@ def sendWarningMessage(gmail_service, retention_period_in_days, user_email, user
 
     try:
         sent_message = gmail_service.users().messages().send(**params).execute()
-        print_wrapper('Sent message, ID: %s' % sent_message['id'])
+        OUTPUT_BUFFER.write('Sent message, ID: %s' % sent_message['id'])
     except errors.HttpError, error:
         logging.error('An error occurred: %s' % error)
 
@@ -182,11 +189,10 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
     """
     Look up users, and email a warning if they have super old emails.
     """
-    global GAE_OUTPUT_BUFFER
-    GAE_OUTPUT_BUFFER = []
+    OUTPUT_BUFFER.clear()
     # There's a "warning" period of "hey, this will get deleted"
     # And a "suggest" period of "why not clean out this other old stuff, too?"
-    date_before = date.today() - timedelta(days=(retention_period_in_days - 30))  # Subtract 30 for a warning period
+    date_before = date.today() - timedelta(days=(retention_period_in_days - 97))  # Subtract 30 for a warning period
     suggest_before = date.today() - timedelta(days=(retention_period_in_days - (365 * 2)))  # Subtract 365*2 for a suggestion email period
     date_string_before = date_before.strftime('%Y/%m/%d')
     suggest_string_before = suggest_before.strftime('%Y/%m/%d')
@@ -194,24 +200,30 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
     directory_service = getDirectoryService(ADMIN_TO_IMPERSONATE)
     all_users = getAllUsers(directory_service)
 
-    print_wrapper('Retention set to: %d days' % (retention_period_in_days))
-    print_wrapper('Before string is: %s' % (date_string_before))
-    print_wrapper('Sending mail: %s' % (send_mail and CAN_SEND_MAIL))
+    OUTPUT_BUFFER.write('Retention set to: %d days' % (retention_period_in_days))
+    OUTPUT_BUFFER.write('Before string is: %s' % (date_string_before))
+    OUTPUT_BUFFER.write('Sending mail: %s' % (send_mail and CAN_SEND_MAIL))
 
-    print_wrapper('Looping over users...\n')
+    OUTPUT_BUFFER.write('Looping over users...\n')
     for email, firstName in all_users.iteritems():
         gmail_service = getGmailService(email)
 
         params = {'userId': email, 'q': 'before:%s' % date_string_before}
-        one_page = gmail_service.users().threads().list(**params).execute()
-        # TODO: Catch DeadlineExceededError here and elsewhere
+
+        retry_count = 0
+        while retry_count < 2:
+            try:
+                one_page = gmail_service.users().threads().list(**params).execute()
+                break
+            except DeadlineExceededError:
+                retry_count += 1
 
         size_estimate = one_page['resultSizeEstimate']
         if 'threads' in one_page:
             size_estimate = max(size_estimate, len(one_page['threads']))
 
         if size_estimate > 0:
-            print_wrapper('User: %s (%s)' % (email, size_estimate))
+            OUTPUT_BUFFER.write('User: %s (%s)' % (email, size_estimate))
 
             # Cap size to 10
             one_page['threads'] = one_page['threads'][:10]
@@ -227,18 +239,18 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
                 safer_subject = first_subject.encode('ascii', 'ignore')
                 if safer_subject is not "":
                     subject_list.append(safer_subject)
-                    print_wrapper('\t' + safer_subject)
+                    OUTPUT_BUFFER.write('\t' + safer_subject)
 
             if send_mail and CAN_SEND_MAIL:
                 sendWarningMessage(gmail_service, retention_period_in_days, email, firstName, size_estimate,
                                    '\n> '.join(subject_list), date_string_before, suggest_string_before)
-            print_wrapper('')
+            OUTPUT_BUFFER.write('')
 
-    print_wrapper('Done.')
-    return GAE_OUTPUT_BUFFER
+    OUTPUT_BUFFER.write('Done.')
+    return OUTPUT_BUFFER.buffer
 
 
 if __name__ == "__main__":
-    print_wrapper('Running...')
+    OUTPUT_BUFFER.write('Running...')
     run(send_mail=True)
-    print_wrapper('Done.')
+    OUTPUT_BUFFER.write('Done.')
