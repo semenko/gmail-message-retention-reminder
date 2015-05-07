@@ -9,7 +9,7 @@ from retention_warning import send_warning
 
 
 class LastRunResult(ndb.Model):
-    content = ndb.StringProperty()
+    content = ndb.TextProperty()
     date = ndb.DateTimeProperty(auto_now_add=True)
 
     @classmethod
