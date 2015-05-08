@@ -212,7 +212,8 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
     OUTPUT_BUFFER.clear()
     # There's a "warning" period of "hey, this will get deleted"
     # And a "suggest" period of "why not clean out this other old stuff, too?"
-    date_before = date.today() - timedelta(days=(retention_period_in_days - 97))  # Subtract 30 for a warning period
+    warn_window = 187  # Subtract this for a warning period
+    date_before = date.today() - timedelta(days=(retention_period_in_days - warn_window))  # e.g. subtract 30 d.
     suggest_before = date.today() - timedelta(days=(retention_period_in_days - (365 * 2)))  # Subtract 365*2 for a suggestion email period
     date_string_before = date_before.strftime('%Y/%m/%d')
     suggest_string_before = suggest_before.strftime('%Y/%m/%d')
@@ -221,7 +222,7 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
     all_users = getAllUsers(directory_service)
 
     OUTPUT_BUFFER.write('Retention set to: %d days' % (retention_period_in_days))
-    OUTPUT_BUFFER.write('Before string is: %s' % (date_string_before))
+    OUTPUT_BUFFER.write('Before string is: %d days (%s)' % (warn_window, date_string_before))
     OUTPUT_BUFFER.write('Sending mail: %s' % (send_mail and CAN_SEND_MAIL))
 
     OUTPUT_BUFFER.write('Looping over users...\n')
