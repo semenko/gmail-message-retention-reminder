@@ -66,9 +66,9 @@ def run_warning_and_save_output(should_send_mail, retention_time=None):
 
 
 class JobHandler(webapp2.RequestHandler):
-    def get(self):
+    def get(self, retention_time=None):
         self.response.write('<pre>Running CRON job (with email)\n\n')
-        warning_string = run_warning_and_save_output(should_send_mail=True)
+        warning_string = run_warning_and_save_output(should_send_mail=True, retention_time=retention_time)
         self.response.write(warning_string)
 
 
