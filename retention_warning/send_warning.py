@@ -105,7 +105,9 @@ def getDirectoryService(user_to_impersonate):
     http = httplib2.Http()
     http = credentials.authorize(http)
 
-    return build('admin', 'directory_v1', http=http)
+    directory_service = retry(build)('admin', 'directory_v1', http=http)
+
+    return directory_service
 
 
 def getGmailService(user_to_impersonate):
@@ -131,7 +133,9 @@ def getGmailService(user_to_impersonate):
     http = httplib2.Http()
     http = credentials.authorize(http)
 
-    return build('gmail', 'v1', http=http)
+    gmail_service = retry(build)('gmail', 'v1', http=http)
+
+    return gmail_service
 
 
 def getAllUsers(directory_service):
@@ -212,8 +216,8 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
     OUTPUT_BUFFER.clear()
     # There's a "warning" period of "hey, this will get deleted"
     # And a "suggest" period of "why not clean out this other old stuff, too?"
-    warn_window = 187  # Subtract this for a warning period
-    date_before = date.today() - timedelta(days=(retention_period_in_days - warn_window))  # e.g. subtract 30 d.
+    warn_window = 45  # Subtract this for a warning period
+    date_before = date.today() - timedelta(days=(retention_period_in_days - warn_window))  # e.g. subtract 45 d.
     suggest_before = date.today() - timedelta(days=(retention_period_in_days - (365 * 2)))  # Subtract 365*2 for a suggestion email period
     date_string_before = date_before.strftime('%Y/%m/%d')
     suggest_string_before = suggest_before.strftime('%Y/%m/%d')
