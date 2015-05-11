@@ -36,7 +36,6 @@ GA_DOMAIN = _CONFIG.get('google', 'domain')
 SERVICE_ACCOUNT = _CONFIG.get('google', 'serviceAccount')
 SERVICE_ACCOUNT_KEY = _CONFIG.get('google', 'serviceAccountKey')
 ADMIN_TO_IMPERSONATE = _CONFIG.get('google', 'adminToImpersonate')
-GA_BLACKLISTED_USERS = _CONFIG.get('google', 'blacklistedUsers')
 GA_SKIP_USERS = _CONFIG.get('google', 'skipUsers')
 RETENTION_DAYS = _CONFIG.getint('google', 'retentionPeriodInDays')
 CAN_SEND_MAIL = _CONFIG.getboolean('google', 'canSendMail')
@@ -93,7 +92,6 @@ def getDirectoryService(user_to_impersonate):
       Directory service object.
     """
     assert(user_to_impersonate.endswith(GA_DOMAIN))
-    assert(user_to_impersonate not in GA_BLACKLISTED_USERS)
 
     credentials = SignedJwtAssertionCredentials(
         SERVICE_ACCOUNT,
@@ -120,7 +118,6 @@ def getGmailService(user_to_impersonate):
       Gmail service object.
     """
     assert(user_to_impersonate.endswith(GA_DOMAIN))
-    assert(user_to_impersonate not in GA_BLACKLISTED_USERS)
 
     credentials = SignedJwtAssertionCredentials(
         SERVICE_ACCOUNT,
