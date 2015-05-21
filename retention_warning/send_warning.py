@@ -185,7 +185,7 @@ def sendWarningMessage(gmail_service, retention_period_in_days, user_email, user
 
     body = [
         "Your email address (%s) is set to keep messages for %s days (%.4g years).\n" % (user_email, retention_period_in_days, retention_period_in_days / float(365)),
-        "You have at least %s messages from before %s that will be trashed over the next month.\n" % (message_count, before_date),
+        "You have at least %s messages from before %s that will be deleted over the next month.\n" % (message_count, before_date),
         "Some of the ancient emails to be removed include:\n\n> %s\n\n" % (subjects),
         "You can see the full list of messages at: https://mail.google.com/a/%s/#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % before_date)),
         "Thanks,", "Domain Administrator\n\n",
