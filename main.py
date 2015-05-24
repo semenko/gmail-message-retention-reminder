@@ -35,7 +35,8 @@ class CleanupHandler(webapp2.RequestHandler):
 
 class MainHandler(webapp2.RequestHandler):
     def get(self):
-        self.response.write('<a href="/tasks/run-silently">/tasks/run-silently</a> or /tasks/send-mail<br><hr>')
+        self.response.write('<a href="/tasks/run-silently">/tasks/run-silently</a> or /tasks/send-mail<br><br>')
+        self.response.write('Retention period: %d days<br><hr>' % (send_warning.RETENTION_DAYS))
         self.response.write('<pre>Last runs:\n\n')
         last_run_data = LastRunResult.last_runs(RECORD_KEY).fetch(10)
 
