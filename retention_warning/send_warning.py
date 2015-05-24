@@ -38,6 +38,7 @@ SERVICE_ACCOUNT_KEY = _CONFIG.get('google', 'serviceAccountKey')
 ADMIN_TO_IMPERSONATE = _CONFIG.get('google', 'adminToImpersonate')
 GA_SKIP_USERS = _CONFIG.get('google', 'skipUsers')
 RETENTION_DAYS = _CONFIG.getint('google', 'retentionPeriodInDays')
+WARNING_DAYS = _CONFIG.getint('google', 'warningPeriodInDays')
 CAN_SEND_MAIL = _CONFIG.getboolean('google', 'canSendMail')
 
 
@@ -206,15 +207,14 @@ def sendWarningMessage(gmail_service, retention_period_in_days, user_email, user
         logging.error('An error occurred: %s' % error)
 
 
-def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
+def run(send_mail=False, retention_period_in_days=RETENTION_DAYS, warning_window_in_days=WARNING_DAYS):
     """
     Look up users, and email a warning if they have super old emails.
     """
     OUTPUT_BUFFER.clear()
     # There's a "warning" period of "hey, this will get deleted"
     # And a "suggest" period of "why not clean out this other old stuff, too?"
-    warn_window = 45  # Subtract this for a warning period
-    date_before = date.today() - timedelta(days=(retention_period_in_days - warn_window))  # e.g. subtract 45 d.
+    date_before = date.today() - timedelta(days=(retention_period_in_days - warning_window_in_days))  # e.g. subtract 45 d.
     suggest_before = date.today() - timedelta(days=(retention_period_in_days - (365 * 2)))  # Subtract 365*2 for a suggestion email period
     date_string_before = date_before.strftime('%Y/%m/%d')
     suggest_string_before = suggest_before.strftime('%Y/%m/%d')
@@ -223,7 +223,7 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS):
     all_users = getAllUsers(directory_service)
 
     OUTPUT_BUFFER.write('Retention set to: %d days' % (retention_period_in_days))
-    OUTPUT_BUFFER.write('Before string is: %d days (%s)' % (warn_window, date_string_before))
+    OUTPUT_BUFFER.write('Before string is: %d days (%s)' % (warning_window_in_days, date_string_before))
     OUTPUT_BUFFER.write('Sending mail: %s' % (send_mail and CAN_SEND_MAIL))
 
     OUTPUT_BUFFER.write('Looping over users...\n')
