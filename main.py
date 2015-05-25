@@ -73,7 +73,7 @@ class JobHandler(webapp2.RequestHandler):
         # Drop the taskType parameter so we can pass raw kwargs to run()
         del(kwargs['taskType'])
         # Convert all the values to INTs
-        kwargs = dict((k, int(v)) for k,v in kwargs.iteritems())
+        kwargs = dict((k, int(v)) for k, v in kwargs.iteritems())
 
         self.response.write('<pre>')
         warning_string = run_warning_and_save_output(send_mail=should_send_mail, **kwargs)
