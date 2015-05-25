@@ -87,4 +87,4 @@ app = webapp2.WSGIApplication(
         webapp2.Route('/tasks/<taskType:(send-mail|run-silently)>/<retention_period_in_days:\d+>', JobHandler),
         webapp2.Route('/tasks/<taskType:(send-mail|run-silently)>/<retention_period_in_days:\d+>/<warning_window_in_days:\d+>', JobHandler),
         webapp2.Route('/tasks/cleanup', CleanupHandler)
-    ], debug=True)
+    ], debug=False)
