@@ -35,9 +35,12 @@ class CleanupHandler(webapp2.RequestHandler):
 
 class MainHandler(webapp2.RequestHandler):
     def get(self):
-        self.response.write('<a href="/tasks/run-silently">/tasks/run-silently</a> or /tasks/send-mail<br><br>')
-        self.response.write('Retention period: %d days<br><hr>' % (send_warning.RETENTION_DAYS))
-        self.response.write('<pre>Last runs:\n\n')
+        self.response.write('<pre><a href="/tasks/run-silently">/tasks/run-silently</a>/(retention_days)/(warning_days)\n\n')
+        self.response.write('or /tasks/send-mail...\n\nSettings:\n')
+        self.response.write(' Domain: %s\n' % (send_warning.GA_DOMAIN))
+        self.response.write(' Retention period: %d days\n' % (send_warning.RETENTION_DAYS))
+        self.response.write(' Warning period: %d days\n' % (send_warning.WARNING_DAYS))
+        self.response.write(' Can send mail?: %r\n<hr>\n' % (send_warning.CAN_SEND_MAIL))
         last_run_data = LastRunResult.last_runs(RECORD_KEY).fetch(10)
 
         for data in last_run_data:
@@ -46,16 +49,11 @@ class MainHandler(webapp2.RequestHandler):
             self.response.write('\n\n--------------------------------\n\n')
 
 
-def run_warning_and_save_output(should_send_mail, retention_time=None):
+def run_warning_and_save_output(*args, **kwargs):
     """
     Run the warning script and save the output.
-    :param mail: Send mail? Boolean.
-    :return: String of results object.
     """
-    if retention_time is not None:
-        warning_response = send_warning.run(send_mail=should_send_mail, retention_period_in_days=int(retention_time))
-    else:
-        warning_response = send_warning.run(send_mail=should_send_mail)
+    warning_response = send_warning.run(*args, **kwargs)
     warning_string = '\n'.join(warning_response)
 
     # Save the result
@@ -67,25 +65,26 @@ def run_warning_and_save_output(should_send_mail, retention_time=None):
 
 
 class JobHandler(webapp2.RequestHandler):
-    def get(self, retention_time=None):
-        self.response.write('<pre>Running CRON job (with email)\n\n')
-        warning_string = run_warning_and_save_output(should_send_mail=True, retention_time=retention_time)
-        self.response.write(warning_string)
+    def get(self, **kwargs):
+        should_send_mail = False
+        if kwargs['taskType'] is 'send-mail':
+            should_send_mail = True
 
+        # Drop the taskType parameter so we can pass raw kwargs to run()
+        del(kwargs['taskType'])
+        # Convert all the values to INTs
+        kwargs = dict((k, int(v)) for k,v in kwargs.iteritems())
 
-class SilentJobHandler(webapp2.RequestHandler):
-    def get(self, retention_time=None):
-        self.response.write('<pre>Running silent job\n\n')
-        warning_string = run_warning_and_save_output(should_send_mail=False, retention_time=retention_time)
+        self.response.write('<pre>')
+        warning_string = run_warning_and_save_output(send_mail=should_send_mail, **kwargs)
         self.response.write(warning_string)
 
 
 app = webapp2.WSGIApplication(
     [
-        ('/', MainHandler),
-        ('/tasks/send-mail', JobHandler),
-        ('/tasks/send-mail/(\d+)', JobHandler),
-        ('/tasks/run-silently', SilentJobHandler),
-        ('/tasks/run-silently/(\d+)', SilentJobHandler),
-        ('/tasks/cleanup', CleanupHandler)
+        webapp2.Route('/', MainHandler),
+        webapp2.Route('/tasks/<taskType:(send-mail|run-silently)>', JobHandler),
+        webapp2.Route('/tasks/<taskType:(send-mail|run-silently)>/<retention_period_in_days:\d+>', JobHandler),
+        webapp2.Route('/tasks/<taskType:(send-mail|run-silently)>/<retention_period_in_days:\d+>/<warning_window_in_days:\d+>', JobHandler),
+        webapp2.Route('/tasks/cleanup', CleanupHandler)
     ], debug=True)

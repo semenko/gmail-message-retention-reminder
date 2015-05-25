@@ -212,6 +212,7 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS, warning_window
     Look up users, and email a warning if they have super old emails.
     """
     OUTPUT_BUFFER.clear()
+
     # There's a "warning" period of "hey, this will get deleted"
     # And a "suggest" period of "why not clean out this other old stuff, too?"
     date_before = date.today() - timedelta(days=(retention_period_in_days - warning_window_in_days))  # e.g. subtract 45 d.
