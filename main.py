@@ -68,7 +68,7 @@ class JobHandler(webapp2.RequestHandler):
     def get(self, **kwargs):
         should_send_mail = False
         if 'send-mail' in str(kwargs['taskType']):
-            #should_send_mail = True
+            should_send_mail = True
 
         # Drop the taskType parameter so we can pass raw kwargs to run()
         del(kwargs['taskType'])
