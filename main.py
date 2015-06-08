@@ -77,7 +77,7 @@ class JobHandler(webapp2.RequestHandler):
 
         self.response.write('<pre>')
         warning_string = run_warning_and_save_output(send_mail=should_send_mail, **kwargs)
-        self.response.write(warning_string)
+        self.response.write('%s\n' % (cgi.escape(warning_string)))
 
 
 app = webapp2.WSGIApplication(
