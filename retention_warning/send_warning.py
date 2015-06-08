@@ -26,7 +26,9 @@ if platform.system() == "Darwin":
 RUNNING_ON_GAE = 'SERVER_SOFTWARE' in os.environ
 
 
-# Load our configuration
+###
+# Load the configuration parameters
+###
 THIS_PATH = os.path.dirname(os.path.realpath(__file__))
 
 _CONFIG = configparser.ConfigParser()
@@ -40,7 +42,7 @@ GA_SKIP_USERS = _CONFIG.get('google', 'skipUsers')
 RETENTION_DAYS = _CONFIG.getint('google', 'retentionPeriodInDays')
 WARNING_DAYS = _CONFIG.getint('google', 'warningPeriodInDays')
 CAN_SEND_MAIL = _CONFIG.getboolean('google', 'canSendMail')
-
+###
 
 # Grab the service account .pem or .p12 private key
 with open(THIS_PATH + "/" + SERVICE_ACCOUNT_KEY, 'rb') as f:
@@ -185,12 +187,12 @@ def sendWarningMessage(gmail_service, retention_period_in_days, user_email, user
     subject = "[%s] Warning: Some very old emails will be trashed" % (user_name)
 
     body = [
-        "Your email address (%s) is set to keep messages for %s days (%.4g years).\n" % (user_email, retention_period_in_days, retention_period_in_days / float(365)),
+        "Your email address (%s) is set to keep messages for %s days (%.3g years).\n" % (user_email, retention_period_in_days, retention_period_in_days / float(365)),
         "You have at least %s messages from before %s that will be deleted over the next month.\n" % (message_count, before_date),
         "Some of the ancient emails to be removed include:\n\n> %s\n\n" % (subjects),
         "You can see the full list of messages at: https://mail.google.com/a/%s/#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % before_date)),
         "Thanks,", "Domain Administrator\n\n",
-        "P.S. You'll receive a message like this every Monday if you have extremely old emails -- they really slow down your mailbox!",
+        "P.S. You'll receive a message like this every Monday if you have extremely old emails.",
         "Want to clean up now? Try deleting some of these messages: https://mail.google.com/a/%s/#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % suggest_date))
     ]
 
