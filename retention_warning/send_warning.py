@@ -192,7 +192,7 @@ def sendWarningMessage(gmail_service, retention_period_in_days, user_email, user
         "Some of the ancient emails to be removed include:\n\n> %s\n\n" % (subjects),
         "You can see the full list of messages at: https://mail.google.com/a/%s/#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % before_date)),
         "Thanks,", "Domain Administrator\n\n",
-        "P.S. You'll receive a message like this every Monday if you have extremely old emails.",
+        "P.S. You'll receive a message like this every month if you have extremely old emails.",
         "Want to clean up now? Try deleting some of these messages: https://mail.google.com/a/%s/#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % suggest_date))
     ]
 
