@@ -1,6 +1,4 @@
 configparser>=3.3.0.post2
 google-api-python-client>=1.4.0
 httplib2>=0.9.1
-#pyOpenSSL>=0.15.1
-#PyCrypto>=2.6.1
 six>=1.9.0
