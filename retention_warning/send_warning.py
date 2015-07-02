@@ -195,7 +195,6 @@ def sendWarningMessage(gmail_service, retention_period_in_days, user_email, user
         "P.S. You'll receive a message like this every month if you have extremely old emails.",
         "Want to clean up now? Try deleting some of these messages: https://mail.google.com/a/%s/#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % suggest_date))
     ]
-
     body = '\n'.join(body)
 
     message = 'From: %s\nTo: %s\nSubject: %s\n\n%s' % (user_email, user_email, subject, body)
@@ -220,7 +219,6 @@ def runRetentionOnOneUser(email, date_string_before):
     gmail_service = getGmailService(email)
 
     params = {'userId': email, 'q': 'before:%s' % date_string_before}
-
     one_page = retry(gmail_service.users().threads().list(**params).execute)()
 
     size_estimate = one_page['resultSizeEstimate']
