@@ -254,11 +254,14 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS, warning_window
             for thread in one_page['threads']:
                 thread_params['id'] = thread['id']
                 one_thread = retry(gmail_service.users().threads().get(**thread_params).execute)()
-                first_subject = one_thread['messages'][0]['payload']['headers'][0]['value']
-                safer_subject = first_subject.encode('ascii', 'ignore')
-                if safer_subject is not "":
-                    subject_list.append(safer_subject)
-                    OUTPUT_BUFFER.write('\t' + safer_subject)
+
+                # Apparently a thread can lack messages? (See issue #6)
+                if 'messages' in one_thread:
+                    first_subject = one_thread['messages'][0]['payload']['headers'][0]['value']
+                    safer_subject = first_subject.encode('ascii', 'ignore')
+                    if safer_subject is not "":
+                        subject_list.append(safer_subject)
+                        OUTPUT_BUFFER.write('\t' + safer_subject)
 
             if send_mail and CAN_SEND_MAIL:
                 sendWarningMessage(gmail_service, retention_period_in_days, email, firstName, size_estimate,
