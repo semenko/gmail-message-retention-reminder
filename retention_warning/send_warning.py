@@ -209,6 +209,51 @@ def sendWarningMessage(gmail_service, retention_period_in_days, user_email, user
         logging.error('An error occurred: %s' % error)
 
 
+def runRetentionOnOneUser(email, date_string_before):
+    """
+    Given a user's email and searching date string, search a user's email to find old messages.
+
+    Excerpt the subjects from ~10 messages and return those.
+
+    :return: gmail_service, size_estimate, subject_list for mailing inside another function
+    """
+    gmail_service = getGmailService(email)
+
+    params = {'userId': email, 'q': 'before:%s' % date_string_before}
+
+    one_page = retry(gmail_service.users().threads().list(**params).execute)()
+
+    size_estimate = one_page['resultSizeEstimate']
+    if 'threads' in one_page:
+        size_estimate = max(size_estimate, len(one_page['threads']))
+
+    if size_estimate > 0:
+        OUTPUT_BUFFER.write('User: %s (%s)' % (email, size_estimate))
+
+        # Cap size to 10
+        one_page['threads'] = one_page['threads'][:10]
+
+        thread_params = {'userId': email, 'format': 'metadata',
+                         'fields': 'messages/payload/headers', 'metadataHeaders': 'subject'}
+
+        subject_list = []
+        for thread in one_page['threads']:
+            thread_params['id'] = thread['id']
+            one_thread = retry(gmail_service.users().threads().get(**thread_params).execute)()
+
+            # Apparently a thread can lack messages? (See issue #6)
+            if 'messages' in one_thread:
+                first_subject = one_thread['messages'][0]['payload']['headers'][0]['value']
+                safer_subject = first_subject.encode('ascii', 'ignore')
+                if safer_subject is not "":
+                    subject_list.append(safer_subject)
+                    OUTPUT_BUFFER.write('\t' + safer_subject)
+
+        return gmail_service, size_estimate, subject_list
+
+    return False
+
+
 def run(send_mail=False, retention_period_in_days=RETENTION_DAYS, warning_window_in_days=WARNING_DAYS):
     """
     Look up users, and email a warning if they have super old emails.
@@ -231,42 +276,15 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS, warning_window
 
     OUTPUT_BUFFER.write('Looping over users...\n')
     for email, firstName in all_users.iteritems():
-        gmail_service = getGmailService(email)
+        # Do all the hard work on each user account.
+        gmail_service, size_estimate, subject_list = runRetentionOnOneUser(email, date_string_before)
 
-        params = {'userId': email, 'q': 'before:%s' % date_string_before}
-
-        one_page = retry(gmail_service.users().threads().list(**params).execute)()
-
-        size_estimate = one_page['resultSizeEstimate']
-        if 'threads' in one_page:
-            size_estimate = max(size_estimate, len(one_page['threads']))
-
-        if size_estimate > 0:
-            OUTPUT_BUFFER.write('User: %s (%s)' % (email, size_estimate))
-
-            # Cap size to 10
-            one_page['threads'] = one_page['threads'][:10]
-
-            thread_params = {'userId': email, 'format': 'metadata',
-                             'fields': 'messages/payload/headers', 'metadataHeaders': 'subject'}
-
-            subject_list = []
-            for thread in one_page['threads']:
-                thread_params['id'] = thread['id']
-                one_thread = retry(gmail_service.users().threads().get(**thread_params).execute)()
-
-                # Apparently a thread can lack messages? (See issue #6)
-                if 'messages' in one_thread:
-                    first_subject = one_thread['messages'][0]['payload']['headers'][0]['value']
-                    safer_subject = first_subject.encode('ascii', 'ignore')
-                    if safer_subject is not "":
-                        subject_list.append(safer_subject)
-                        OUTPUT_BUFFER.write('\t' + safer_subject)
-
+        if gmail_service:
             if send_mail and CAN_SEND_MAIL:
                 sendWarningMessage(gmail_service, retention_period_in_days, email, firstName, size_estimate,
                                    '\n> '.join(subject_list), date_string_before, suggest_string_before)
             OUTPUT_BUFFER.write('')
+
 
     OUTPUT_BUFFER.write('Done.')
     return OUTPUT_BUFFER.buffer
