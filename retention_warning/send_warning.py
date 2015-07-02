@@ -227,6 +227,7 @@ def runRetentionOnOneUser(email, date_string_before):
     if 'threads' in one_page:
         size_estimate = max(size_estimate, len(one_page['threads']))
 
+    subject_list = []
     if size_estimate > 0:
         OUTPUT_BUFFER.write('User: %s (%s)' % (email, size_estimate))
 
@@ -236,7 +237,6 @@ def runRetentionOnOneUser(email, date_string_before):
         thread_params = {'userId': email, 'format': 'metadata',
                          'fields': 'messages/payload/headers', 'metadataHeaders': 'subject'}
 
-        subject_list = []
         for thread in one_page['threads']:
             thread_params['id'] = thread['id']
             one_thread = retry(gmail_service.users().threads().get(**thread_params).execute)()
@@ -249,9 +249,7 @@ def runRetentionOnOneUser(email, date_string_before):
                     subject_list.append(safer_subject)
                     OUTPUT_BUFFER.write('\t' + safer_subject)
 
-        return gmail_service, size_estimate, subject_list
-
-    return False
+    return gmail_service, size_estimate, subject_list
 
 
 def run(send_mail=False, retention_period_in_days=RETENTION_DAYS, warning_window_in_days=WARNING_DAYS):
@@ -279,7 +277,7 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS, warning_window
         # Do all the hard work on each user account.
         gmail_service, size_estimate, subject_list = runRetentionOnOneUser(email, date_string_before)
 
-        if gmail_service:
+        if size_estimate > 0 or len(subject_list) > 0:
             if send_mail and CAN_SEND_MAIL:
                 sendWarningMessage(gmail_service, retention_period_in_days, email, firstName, size_estimate,
                                    '\n> '.join(subject_list), date_string_before, suggest_string_before)
