@@ -212,7 +212,7 @@ def runRetentionOnOneUser(email, date_string_before):
     """
     Given a user's email and searching date string, search a user's email to find old messages.
 
-    Excerpt the subjects from ~10 messages and return those.
+    Excerpt the subjects from ~5 messages and return those.
 
     :return: gmail_service, size_estimate, subject_list for mailing inside another function
     """
@@ -229,8 +229,8 @@ def runRetentionOnOneUser(email, date_string_before):
     if size_estimate > 0:
         OUTPUT_BUFFER.write('User: %s (%s)' % (email, size_estimate))
 
-        # Cap size to 10
-        one_page['threads'] = one_page['threads'][:10]
+        # Cap size to five
+        one_page['threads'] = one_page['threads'][:5]
 
         thread_params = {'userId': email, 'format': 'metadata',
                          'fields': 'messages/payload/headers', 'metadataHeaders': 'subject'}
