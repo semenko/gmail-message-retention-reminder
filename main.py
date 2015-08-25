@@ -40,6 +40,7 @@ class MainHandler(webapp2.RequestHandler):
         self.response.write(' Domain: %s\n' % (send_warning.GA_DOMAIN))
         self.response.write(' Retention period: %d days\n' % (send_warning.RETENTION_DAYS))
         self.response.write(' Warning period: %d days\n' % (send_warning.WARNING_DAYS))
+        self.response.write(' Excluded labels: %d days\n' % (send_warning.EXCLUDED_LABELS))
         self.response.write(' Can send mail?: %r\n<hr>\n' % (send_warning.CAN_SEND_MAIL))
         last_run_data = LastRunResult.last_runs(RECORD_KEY).fetch(10)
 

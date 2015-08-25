@@ -41,6 +41,7 @@ ADMIN_TO_IMPERSONATE = _CONFIG.get('google', 'adminToImpersonate')
 GA_SKIP_USERS = _CONFIG.get('google', 'skipUsers')
 RETENTION_DAYS = _CONFIG.getint('google', 'retentionPeriodInDays')
 WARNING_DAYS = _CONFIG.getint('google', 'warningPeriodInDays')
+EXCLUDED_LABELS = _CONFIG.get('google', 'excludedLabels')
 CAN_SEND_MAIL = _CONFIG.getboolean('google', 'canSendMail')
 ###
 
@@ -218,7 +219,7 @@ def runRetentionOnOneUser(email, date_string_before):
     """
     gmail_service = getGmailService(email)
 
-    params = {'userId': email, 'q': 'before:%s' % date_string_before}
+    params = {'userId': email, 'q': 'before:%s %s' % (date_string_before, EXCLUDED_LABELS)}
     one_page = retry(gmail_service.users().threads().list(**params).execute)()
 
     size_estimate = one_page['resultSizeEstimate']
