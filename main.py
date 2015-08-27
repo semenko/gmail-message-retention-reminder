@@ -35,13 +35,13 @@ class CleanupHandler(webapp2.RequestHandler):
 
 class MainHandler(webapp2.RequestHandler):
     def get(self):
-        self.response.write('<pre><a href="/tasks/run-silently">/tasks/run-silently</a>/(retention_days)/(warning_days)\n\n')
-        self.response.write('or /tasks/send-mail...\n\nSettings:\n')
-        self.response.write(' Domain: %s\n' % (send_warning.GA_DOMAIN))
-        self.response.write(' Retention period: %d days\n' % (send_warning.RETENTION_DAYS))
-        self.response.write(' Warning period: %d days\n' % (send_warning.WARNING_DAYS))
-        self.response.write(' Excluded labels: %d days\n' % (send_warning.EXCLUDED_LABELS))
-        self.response.write(' Can send mail?: %r\n<hr>\n' % (send_warning.CAN_SEND_MAIL))
+        self.response.write('<pre><a href="/tasks/run-silently">/tasks/run-silently</a>/(retention_days)/(warning_days)\n')
+        self.response.write('  or /tasks/send-mail\n\n')
+        self.response.write('Domain           : %s\n' % (send_warning.GA_DOMAIN))
+        self.response.write('Retention period : %d days (%.2g years)\n' % (send_warning.RETENTION_DAYS, send_warning.RETENTION_DAYS / float(365)))
+        self.response.write(' Warning period  : +%d days\n' % (send_warning.WARNING_DAYS))
+        self.response.write(' Exclusions      : %s\n' % (send_warning.EXCLUDED_LABELS))
+        self.response.write('Can send mail?   : %r\n\n--------------------------------\n\n' % (send_warning.CAN_SEND_MAIL))
         last_run_data = LastRunResult.last_runs(RECORD_KEY).fetch(10)
 
         for data in last_run_data:

@@ -148,7 +148,7 @@ def getAllUsers(directory_service):
     :param directory_service: A directory service object
     :return: A dictionary of {primaryEmail: givenName}
     """
-    OUTPUT_BUFFER.write('Listing all users at %s' % (GA_DOMAIN))
+    OUTPUT_BUFFER.write('Domain           : %s' % (GA_DOMAIN))
     all_users = []
     page_token = None
     params = {'domain': GA_DOMAIN, 'viewType': 'domain_public'}
@@ -174,7 +174,7 @@ def getAllUsers(directory_service):
         else:
             OUTPUT_BUFFER.write('Skipped user: %s' % (user['primaryEmail']))
 
-    OUTPUT_BUFFER.write('Found %d users in domain.' % (len(email_and_name)))
+    OUTPUT_BUFFER.write('  Users seen     : %d' % (len(email_and_name)))
     return email_and_name
 
 
@@ -260,18 +260,18 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS, warning_window
     # There's a "warning" period of "hey, this will get deleted"
     # And a "suggest" period of "why not clean out this other old stuff, too?"
     date_before = date.today() - timedelta(days=(retention_period_in_days - warning_window_in_days))  # e.g. subtract 45 d.
-    suggest_before = date.today() - timedelta(days=(retention_period_in_days - (365 * 2)))  # Subtract 365*2 for a suggestion email period
+    suggest_before = date.today() - timedelta(days=(retention_period_in_days - (365 * 1)))  # Subtract 365*1 for a suggestion email period
     date_string_before = date_before.strftime('%Y/%m/%d')
     suggest_string_before = suggest_before.strftime('%Y/%m/%d')
 
     directory_service = getDirectoryService(ADMIN_TO_IMPERSONATE)
     all_users = getAllUsers(directory_service)
 
-    OUTPUT_BUFFER.write('Retention set to: %d days' % (retention_period_in_days))
-    OUTPUT_BUFFER.write('Before string is: %d days (%s)' % (warning_window_in_days, date_string_before))
-    OUTPUT_BUFFER.write('Sending mail: %s' % (send_mail and CAN_SEND_MAIL))
+    OUTPUT_BUFFER.write('Retention period : %d days (%.2g years)' % (retention_period_in_days, retention_period_in_days / float(365)))
+    OUTPUT_BUFFER.write('  Before string  : before:%s (+%d days)' % (date_string_before, warning_window_in_days))
+    OUTPUT_BUFFER.write('  Exclusions     : %s' % (EXCLUDED_LABELS))
+    OUTPUT_BUFFER.write('Sending mail     : %s' % (send_mail and CAN_SEND_MAIL))
 
-    OUTPUT_BUFFER.write('Looping over users...\n')
     for email, firstName in all_users.iteritems():
         # Do all the hard work on each user account.
         gmail_service, size_estimate, subject_list = runRetentionOnOneUser(email, date_string_before)
