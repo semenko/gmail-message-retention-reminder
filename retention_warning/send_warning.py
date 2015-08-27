@@ -270,7 +270,7 @@ def run(send_mail=False, retention_period_in_days=RETENTION_DAYS, warning_window
     OUTPUT_BUFFER.write('Retention period : %d days (%.2g years)' % (retention_period_in_days, retention_period_in_days / float(365)))
     OUTPUT_BUFFER.write('  Before string  : before:%s (+%d days)' % (date_string_before, warning_window_in_days))
     OUTPUT_BUFFER.write('  Exclusions     : %s' % (EXCLUDED_LABELS))
-    OUTPUT_BUFFER.write('Sending mail     : %s' % (send_mail and CAN_SEND_MAIL))
+    OUTPUT_BUFFER.write('Sending mail     : %s\n' % (send_mail and CAN_SEND_MAIL))
 
     for email, firstName in all_users.iteritems():
         # Do all the hard work on each user account.
