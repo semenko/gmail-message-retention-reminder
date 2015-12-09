@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
 import base64
+import configparser
+import httplib2
 import logging
 import os
-import httplib2
-import configparser
 import time
 import urllib
 from datetime import date, timedelta
@@ -187,16 +187,16 @@ def sendWarningMessage(gmail_service, retention_period_in_days, user_email, user
     logging.debug('Sending message to %s' % user_email)
     subject = "[%s] Warning: Some very old emails will be trashed" % (user_name)
 
-    body = [
+    body_list = [
         "Your email address (%s) is set to keep messages for %s days (%.2g years).\n" % (user_email, retention_period_in_days, retention_period_in_days / float(365)),
         "You have at least %s messages from before %s that will be deleted over the next month.\n" % (message_count, before_date),
         "Some of the ancient emails to be removed include:\n\n> %s\n\n" % (subjects),
         "You can see the full list of messages at: https://mail.google.com/a/%s/?0#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % before_date)),
         "Thanks,", "Domain Administrator\n\n",
         "P.S. You'll receive a message like this every month if you have extremely old emails.",
-        "Want to clean up now? Try deleting some of these messages: https://mail.google.com/a/%s/?0#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % suggest_date))
+        "Want to clean up now? Try deleting these messages: https://mail.google.com/a/%s/?0#search/%s\n" % (GA_DOMAIN, urllib.quote_plus('before:%s' % suggest_date))
     ]
-    body = '\n'.join(body)
+    body = '\n'.join(body_list)
 
     message = 'From: %s\nTo: %s\nSubject: %s\n\n%s' % (user_email, user_email, subject, body)
     encoded_message = base64.urlsafe_b64encode(message)
