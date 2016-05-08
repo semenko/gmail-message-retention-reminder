@@ -56,6 +56,6 @@ After you perform the shared setup requirements, you can either run this on App 
 + https://nick.semenkovich.com/
 
 ## License
-Copyright 2015, Nick Semenkovich <semenko@alum.mit.edu>
+Copyright 2015-2016, Nick Semenkovich <semenko@alum.mit.edu>
 
 Released under the MIT License. See LICENSE for details.
