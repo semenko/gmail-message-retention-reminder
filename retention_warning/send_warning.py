@@ -12,7 +12,7 @@ from functools import wraps
 
 from apiclient import errors
 from apiclient.discovery import build
-from oauth2client.client import SignedJwtAssertionCredentials
+from oauth2client.service_account import ServiceAccountCredentials
 
 # Fix 'six' import errors in OS X
 import platform
@@ -45,9 +45,7 @@ EXCLUDED_LABELS = _CONFIG.get('google', 'excludedLabels')
 CAN_SEND_MAIL = _CONFIG.getboolean('google', 'canSendMail')
 ###
 
-# Grab the service account .pem or .p12 private key
-with open(THIS_PATH + "/" + SERVICE_ACCOUNT_KEY, 'rb') as f:
-    SERVICE_SECRET_KEY = f.read()
+SERVICE_SECRET_KEY_FILE = THIS_PATH + "/" + SERVICE_ACCOUNT_KEY
 
 
 # Bare-bones (one value) handling of pretty output for CRON vs GAE
@@ -97,12 +95,12 @@ def getDirectoryService(user_to_impersonate):
     """
     assert(user_to_impersonate.endswith(GA_DOMAIN))
 
-    credentials = SignedJwtAssertionCredentials(
+    credentials = ServiceAccountCredentials.from_p12_keyfile(
         SERVICE_ACCOUNT,
-        SERVICE_SECRET_KEY,
-        sub=user_to_impersonate,
+        SERVICE_SECRET_KEY_FILE,
         scope=['https://www.googleapis.com/auth/admin.directory.user.readonly']
     )
+    credentials.create_delegated(user_to_impersonate)
 
     http = httplib2.Http()
     http = credentials.authorize(http)
@@ -123,13 +121,13 @@ def getGmailService(user_to_impersonate):
     """
     assert(user_to_impersonate.endswith(GA_DOMAIN))
 
-    credentials = SignedJwtAssertionCredentials(
+    credentials = ServiceAccountCredentials.from_p12_keyfile(
         SERVICE_ACCOUNT,
-        SERVICE_SECRET_KEY,
-        sub=user_to_impersonate,
+        SERVICE_SECRET_KEY_FILE,
         scope=['https://www.googleapis.com/auth/gmail.readonly',
                'https://www.googleapis.com/auth/gmail.compose']
     )
+    credentials.create_delegated(user_to_impersonate)
 
     http = httplib2.Http()
     http = credentials.authorize(http)
