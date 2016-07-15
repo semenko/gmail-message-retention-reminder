@@ -35,6 +35,7 @@ _CONFIG = configparser.ConfigParser()
 _CONFIG.read(THIS_PATH + "/secrets.cfg")
 
 GA_DOMAIN = _CONFIG.get('google', 'domain')
+SECRETS_JSON = _CONFIG.get('google', 'secretsJson')
 SERVICE_ACCOUNT = _CONFIG.get('google', 'serviceAccount')
 SERVICE_ACCOUNT_KEY = _CONFIG.get('google', 'serviceAccountKey')
 ADMIN_TO_IMPERSONATE = _CONFIG.get('google', 'adminToImpersonate')
@@ -45,7 +46,7 @@ EXCLUDED_LABELS = _CONFIG.get('google', 'excludedLabels')
 CAN_SEND_MAIL = _CONFIG.getboolean('google', 'canSendMail')
 ###
 
-SERVICE_SECRET_KEY_FILE = THIS_PATH + "/" + SERVICE_ACCOUNT_KEY
+SECRET_JSON_FILE = THIS_PATH + "/" + SECRETS_JSON
 
 
 # Bare-bones (one value) handling of pretty output for CRON vs GAE
@@ -95,12 +96,10 @@ def getDirectoryService(user_to_impersonate):
     """
     assert(user_to_impersonate.endswith(GA_DOMAIN))
 
-    credentials = ServiceAccountCredentials.from_p12_keyfile(
-        SERVICE_ACCOUNT,
-        SERVICE_SECRET_KEY_FILE,
-        scope=['https://www.googleapis.com/auth/admin.directory.user.readonly']
-    )
-    credentials.create_delegated(user_to_impersonate)
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        SECRET_JSON_FILE,
+        scopes=['https://www.googleapis.com/auth/admin.directory.user.readonly']
+    ).create_delegated(user_to_impersonate)
 
     http = httplib2.Http()
     http = credentials.authorize(http)
@@ -121,13 +120,11 @@ def getGmailService(user_to_impersonate):
     """
     assert(user_to_impersonate.endswith(GA_DOMAIN))
 
-    credentials = ServiceAccountCredentials.from_p12_keyfile(
-        SERVICE_ACCOUNT,
-        SERVICE_SECRET_KEY_FILE,
-        scope=['https://www.googleapis.com/auth/gmail.readonly',
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        SECRET_JSON_FILE,
+        scopes=['https://www.googleapis.com/auth/gmail.readonly',
                'https://www.googleapis.com/auth/gmail.compose']
-    )
-    credentials.create_delegated(user_to_impersonate)
+    ).create_delegated(user_to_impersonate)
 
     http = httplib2.Http()
     http = credentials.authorize(http)

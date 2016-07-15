@@ -23,15 +23,16 @@ After you perform the shared setup requirements, you can either run this on App 
 
 1. Visit https://console.developers.google.com
 2. Create a project with a name like "my-organization-retention-warning"
-3. Under APIs and Auth > APIs, search for an enable the "Admin SDK" and "Gmail API"
-4. APIs and Auth > Credentials select "Create new Client ID" of type "Service account"
-5. Ignore the .json you're served, and instead click "Generate new P12 key"
-6. Save the .p12 key somewhere (you'll convert it to a .pem next)
-7. Convert to .pem: `openssl pkcs12 -in downloaded.p12 -nodes -nocerts > secret.pem` (password: notasecret)
-8. Place the secret.pem in the retention_warning/ directory (See secrets.cfg.example)
-9. Copy secrets.cfg.example to secrets.cfg and fill in the values.
-10. Visit https://admin.google.com/ and go to Security > Show More > Advanced Settings > Manage API Client Access
-11. Enter the client name `the-service-account-client-id-from-your-dev-console.apps.googleusercontent.com` and the scopes `https://www.googleapis.com/auth/admin.directory.user.readonly,https://www.googleapis.com/auth/gmail.readonly,https://www.googleapis.com/auth/gmail.compose` and click Authorize.
+3. Under Overview, search for and enable the APIs "Admin SDK" and "Gmail API"
+4. Under Credentials, select "Create Credentials" > "Service Account Key"
+5. Select type "New service account" and enter a descriptive name, e.g. `my-domain-retention-warning`
+6. Save the .json file in the `retention_warning/` directory (See secrets.cfg.example)
+7. Copy secrets.cfg.example to secrets.cfg and fill in the values.
+8. Back in the developer console, click "Manage Service Accounts" and find the key you just created
+9. Under the options dots, click "Edit" then select "Enable Google Apps Domain-wide Delegation" and enter a name for your app
+10. Click "View Client ID" and copy your App ID, e.g. `my-domain-retention-warning@aldine-mail-retention-warning.iam.gserviceaccount.com`
+11. Visit https://admin.google.com/ and go to Security > Show More > Advanced Settings > Manage API Client Access
+12. Enter the client name `my-domain-retention-warning@your-appengine-name.iam.gserviceaccount.com` and the scopes `https://www.googleapis.com/auth/admin.directory.user.readonly,https://www.googleapis.com/auth/gmail.readonly,https://www.googleapis.com/auth/gmail.compose` and click Authorize.
 
 ### Running as a Cron Job
 
